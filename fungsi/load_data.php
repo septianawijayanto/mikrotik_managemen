@@ -72,7 +72,7 @@ if ($API->connect($host, $login, $password, $port, $timeout)) {
 
     // Proses data yang diperoleh dari DHCP leases
     if (!empty($leases)) {
-        echo "<table border='1'>";
+        echo '<table style="border-collapse:collapse;" class="table table-bordered" >';
         echo "<tr><th>IP Address</th><th>MAC Address</th><th>Hostname</th><th>Server</th><th>Status</th></tr>";
         foreach ($leases as $lease) {
             $ip_address = $lease['address'];
@@ -103,7 +103,7 @@ if ($API->connect($host, $login, $password, $port, $timeout)) {
 
     // Proses data yang diperoleh dari Simple Queue
     if (!empty($queues)) {
-        echo "<table border='1'>";
+        echo '<table style="border-collapse:collapse;" class="table table-bordered" >';
         echo "<tr><th>Target</th><th>Bytes Uploaded</th><th>Bytes Downloaded</th><th>Total Bytes</th></tr>";
         foreach ($queues as $queue) {
             $target = isset($queue['target']) ? $queue['target'] : "Unknown";
@@ -134,7 +134,7 @@ if ($API->connect($host, $login, $password, $port, $timeout)) {
 
     echo "<h2>Informasi Trafik dari Semua Interface</h2>";
 
-    echo "<table border='1'>";
+    echo '<table style="border-collapse:collapse;" class="table table-bordered" >';
     echo "<tr><th>Interface</th><th>Received Bits Per Second</th><th>Transmitted Bits Per Second</th></tr>";
 
     // Iterasi setiap interface untuk mendapatkan trafiknya

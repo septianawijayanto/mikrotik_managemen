@@ -1,4 +1,9 @@
 <?php
+
+$title = 'Generate Voucher'; // judul halaman
+
+include 'layouts/header.php'; // memanggil file layout/header.php
+
 require('config/device.php');
 require('config/config.php');
 include('routeros_api.class.php');
@@ -9,44 +14,149 @@ if ($API->connect($host, $login, $password, $port, $timeout)) {
     $profiles = $API->comm("/ip/hotspot/user/profile/print");
     $API->disconnect();
 }
+
 ?>
 
-<!DOCTYPE html>
-<html>
 
-<head>
-    <title>Generate Voucher</title>
-    <script>
-        function updateLimitUptime() {
-            const profiles = <?php echo json_encode($profiles); ?>;
-            const selectedProfile = document.getElementById("profile").value;
-            const limitUptimeInput = document.getElementById("limit-uptime");
+<div class="row">
+    <!-- left column -->
+    <div class="col-md-12">
+        <!-- jquery validation -->
+        <div class="card card-navy">
+            <div class="card-header">
+                <div style="width:100%;border-bottom:1px solid #999;padding-bottom:5px;margin-bottom:5px;"><b> <?php echo $title; ?></b></div>
+                <button type="button" class="btn btn-primary" id="tombol_tambah" data-toggle="modal" data-target="#exampleModal">
+                    <span class="fa fa-plus"></span>
+                </button>
 
-            for (let i = 0; i < profiles.length; i++) {
-                if (profiles[i].name === selectedProfile) {
-                    limitUptimeInput.value = profiles[i]["session-timeout"] || '1d'; // Default to 1 day if not set
-                    break;
-                }
+            </div>
+            <div class="card-body">
+                <!-- ini konten -->
+                <div class="table-responsive" id="konten_voucher">
+                </div>
+                <!-- end konten -->
+            </div>
+            <!-- /.card -->
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modal_tambah" tabindex="-1" role="dialog" aria-labelledby="modal_tambah_judul" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_tambah_judul"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form_golongan" action="fungsi/voucher/create.php" method="POST">
+
+                    <input type="hidden" id="id" name="id">
+                    <input type="hidden" id="old_username" name="old_username">
+
+
+
+                    <div class="form-group">
+                        <label for="profile"> Profile</label>
+                        <select class="form-control" id="profile" name="profile" onchange="updateLimitUptime()" required>
+                            <?php foreach ($profiles as $profile) : ?>
+                                <option class="form-control" value="<?php echo htmlspecialchars($profile['name']); ?>">
+                                    <?php echo htmlspecialchars($profile['name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="voucher_count">Number of Vouchers</label>
+                        <input type="number" class="form-control" name="voucher_count" min="1" required>
+                    </div>
+                    <input type="hidden" id="limit-uptime" name="limit_uptime" readonly><br>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" data-toggle="tooltip" data-placement="top" title="Klik disini untuk menutup form">Tutup</button>
+                        <button type="submit" class="btn btn-primary" id="tombol_simpan" data-toggle="tooltip" data-placement="top" title="Klik disini untuk menyimpan data">Save changes</button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+<?php
+
+include 'layouts/script.php'; // memanggil file layout/footer.php
+?>
+<script>
+    function updateLimitUptime() {
+        const profiles = <?php echo json_encode($profiles); ?>;
+        const selectedProfile = document.getElementById("profile").value;
+        const limitUptimeInput = document.getElementById("limit-uptime");
+
+        for (let i = 0; i < profiles.length; i++) {
+            if (profiles[i].name === selectedProfile) {
+                limitUptimeInput.value = profiles[i]["session-timeout"] || '1d'; // Default to 1 day if not set
+                break;
             }
         }
-    </script>
-</head>
+    }
+    $(document).ready(function() {
 
-<body>
-    <form action="post/voucher.php" method="post">
-        Profile:
-        <select name="profile" id="profile" onchange="updateLimitUptime()" required>
-            <option value="">Select Profile</option>
-            <?php foreach ($profiles as $profile) : ?>
-                <option value="<?php echo htmlspecialchars($profile['name']); ?>">
-                    <?php echo htmlspecialchars($profile['name']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select><br>
-        Number of Vouchers: <input type="number" name="voucher_count" min="1" required><br>
-        Limit Uptime: <input type="text" id="limit-uptime" name="limit_uptime" readonly><br>
-        <input type="submit" value="Generate Vouchers">
-    </form>
-</body>
+        $('#tombol_tambah').click(function(e) {
+            e.preventDefault();
+            $('#tombol_simpan').val('create-post');
+            $('#tombol_simpan').html('Generate');
+            $('#id').val('');
+            $('#modal_tambah').trigger('reset');
+            $('#modal_tambah_judul').html('Generate Voucher');
+            $('#modal_tambah').modal('show');
+        });
+        loadData();
+        $('form').on('submit', function(e) {
+            e.preventDefault();
+            $.ajax({
+                type: $(this).attr('method'),
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                success: function(response) {
+                    alert(response);
+                    loadData();
+                    resetForm();
+                }
+            });
+        })
 
-</html>
+    });
+
+    function loadData() {
+        $.get('fungsi/voucher/index.php', function(data) {
+            $('#konten_voucher').html(data)
+
+            $(".hapusData").click(function(e) {
+                e.preventDefault();
+                var yes = confirm('apakah anda yakin akan menghapus data ini?');
+                if (yes) {
+                    $.ajax({
+                        type: 'get',
+                        url: $(this).attr('href'),
+                        success: function(response) {
+                            alert(response);
+                            loadData();
+                        }
+                    });
+                }
+
+            });
+        });
+    }
+
+    function resetForm() {
+        $('[type=text]').val('');
+        $('[name= username]').focus();
+        $('#modal_tambah').modal('hide');
+        $('form').attr('action', 'fungsi/voucher/create.php');
+    }
+    $('#menu_hotspot').addClass('active');
+    $('#li_hotspot').addClass('menu-open');
+    $('#sub_voucher').addClass('active');
+</script>
